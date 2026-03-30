@@ -1,4 +1,5 @@
 // src/components/Summary.jsx
+import FinanceVisualizer from './FinanceVisualizer'
 
 function calcCost(style, config, styles, costFactors) {
   const factors = costFactors?.[style] || {}
@@ -11,52 +12,40 @@ function calcCost(style, config, styles, costFactors) {
 
   if (style === 'underground') {
     if (config.soilType) total += factors.soilType?.[config.soilType]?.adder || 0
-    if (config.depth) total += factors.depth?.[config.depth]?.adder || 0
-    if (config.access) total += factors.access?.[config.access]?.adder || 0
+    if (config.depth)    total += factors.depth?.[config.depth]?.adder || 0
+    if (config.access)   total += factors.access?.[config.access]?.adder || 0
   } else {
     if (config.wallType) total += factors.wallType?.[config.wallType]?.adder || 0
     if (config.location) total += factors.location?.[config.location]?.adder || 0
-    if (config.door) total += factors.door?.[config.door]?.adder || 0
+    if (config.door)     total += factors.door?.[config.door]?.adder || 0
   }
 
   const amenities = config.amenities || []
-  let amenityTotal = 0
-  amenities.forEach((key) => { amenityTotal += factors.amenities?.[key]?.adder || 0 })
-  total += amenityTotal
+  amenities.forEach((key) => { total += factors.amenities?.[key]?.adder || 0 })
 
   const regionMult = config.zipCode ? getRegionMultiplier(config.zipCode) : 1.0
   total *= regionMult
 
   const items = []
-  items.push({
-    label: `Base ${styleData.name} (${config.size || '—'} sq ft)`,
-    amount: Math.round(base * sizeMult),
-    category: 'structure',
-  })
+  items.push({ label: `Base ${styleData.name} (${config.size || '—'} sq ft)`, amount: Math.round(base * sizeMult), category: 'structure' })
 
   if (style === 'underground') {
-    if (config.soilType && (factors.soilType?.[config.soilType]?.adder || 0) > 0) {
-      items.push({ label: `Soil type: ${factors.soilType[config.soilType].label}`, amount: factors.soilType[config.soilType].adder, category: 'excavation' })
-    }
-    if (config.depth && (factors.depth?.[config.depth]?.adder || 0) > 0) {
+    if (config.soilType && (factors.soilType?.[config.soilType]?.adder || 0) > 0)
+      items.push({ label: `Soil: ${factors.soilType[config.soilType].label}`, amount: factors.soilType[config.soilType].adder, category: 'excavation' })
+    if (config.depth && (factors.depth?.[config.depth]?.adder || 0) > 0)
       items.push({ label: `Depth: ${factors.depth[config.depth].label}`, amount: factors.depth[config.depth].adder, category: 'excavation' })
-    }
-    if (config.access && factors.access?.[config.access]) {
+    if (config.access && factors.access?.[config.access])
       items.push({ label: `Entry: ${factors.access[config.access].label}`, amount: factors.access[config.access].adder, category: 'access' })
-    }
   } else {
-    if (config.wallType && factors.wallType?.[config.wallType]) {
+    if (config.wallType && factors.wallType?.[config.wallType])
       items.push({ label: `Walls: ${factors.wallType[config.wallType].label}`, amount: factors.wallType[config.wallType].adder, category: 'structure' })
-    }
-    if (config.door && factors.door?.[config.door]) {
+    if (config.door && factors.door?.[config.door])
       items.push({ label: `Door: ${factors.door[config.door].label}`, amount: factors.door[config.door].adder, category: 'access' })
-    }
   }
 
   amenities.forEach((key) => {
-    if (factors.amenities?.[key]) {
+    if (factors.amenities?.[key])
       items.push({ label: factors.amenities[key].label, amount: factors.amenities[key].adder, category: 'systems' })
-    }
   })
 
   if (regionMult !== 1.0) {
@@ -64,7 +53,7 @@ function calcCost(style, config, styles, costFactors) {
     items.push({ label: 'Regional labor adjustment', amount: regionAdder, category: 'labor' })
   }
 
-  return { total: Math.round(total), items, regionMult }
+  return { total: Math.round(total), items }
 }
 
 function getRegionMultiplier(zip) {
@@ -88,7 +77,7 @@ const CATEGORY_COLORS = {
 }
 
 const DIY_LABEL = (v) => {
-  if (v === true || v === 'true') return 'DIY OK'
+  if (v === true  || v === 'true')  return 'DIY OK'
   if (v === false || v === 'false') return 'Pro Required'
   return 'Partial DIY'
 }
@@ -96,7 +85,7 @@ const DIY_LABEL = (v) => {
 export default function Summary({ config, style, onSave, saving, saveId, styles, costFactors, workPhases }) {
   const styleData = (styles || []).find((s) => s.id === style)
   const { total, items } = calcCost(style, config, styles, costFactors)
-  const low = Math.round(total * 0.9)
+  const low  = Math.round(total * 0.9)
   const high = Math.round(total * 1.2)
   const phases = workPhases?.[style] || []
 
@@ -105,11 +94,10 @@ export default function Summary({ config, style, onSave, saving, saveId, styles,
       <div className="step-header">
         <span className="step-label">Step 5 of 5</span>
         <h2>Your Bunker Estimate</h2>
-        <p>
-          {styleData?.name} · {config.size || '—'} sq ft · {config.capacity || '—'} occupants
-        </p>
+        <p>{styleData?.name} · {config.size || '—'} sq ft · {config.capacity || '—'} occupants</p>
       </div>
 
+      {/* Cost Banner */}
       <div className="cost-banner">
         <div className="cost-label">Estimated Project Cost</div>
         <div className="cost-range">
@@ -120,6 +108,7 @@ export default function Summary({ config, style, onSave, saving, saveId, styles,
         <div className="cost-note">±10–20% variance based on contractor bids, material prices, and site conditions</div>
       </div>
 
+      {/* Cost Breakdown */}
       <div className="section">
         <h3>Cost Breakdown</h3>
         <div className="line-items">
@@ -146,6 +135,12 @@ export default function Summary({ config, style, onSave, saving, saveId, styles,
         </div>
       </div>
 
+      {/* ── Finance Visualizer ── */}
+      <div className="section section-finance">
+        <FinanceVisualizer totalCost={total} />
+      </div>
+
+      {/* Work Phases */}
       <div className="section">
         <h3>Work Overview</h3>
         <p className="section-sub">Estimated timeline: <strong>{phases.length}–{phases.length * 2} months total</strong></p>
